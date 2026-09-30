@@ -1,0 +1,9 @@
+name=audio_rd
+version=1.0.0
+author=Shashank Hoysala <335582203+CodeUnk1@users.noreply.github.com>
+maintainer=Shashank Hoysala <335582203+CodeUnk1@users.noreply.github.com>
+sentence=A comprehensive library for reading LM393 and analog sound sensors.
+paragraph=Features include clap detection, peak sound monitoring, threshold auto-calibration, and direct numeric comparison using operator overloading.
+category=Sensors
+url=https://github.com/CodeUnk1/audio_rd
+architectures=*

@@ -1,0 +1,123 @@
+#include "audio_rd.h"
+
+// Instantiate global object named 'aud'
+SoundSensor aud;
+
+SoundSensor::SoundSensor() {
+  _pin = 2;
+  _isAnalog = false;
+  _threshold = 500;
+  _lastTriggerTime = 0;
+}
+
+void SoundSensor::attachDigital(uint8_t pin) {
+  _pin = pin;
+  _isAnalog = false;
+  pinMode(_pin, INPUT);
+}
+
+void SoundSensor::attachAnalog(uint8_t pin, int threshold) {
+  _pin = pin;
+  _isAnalog = true;
+  _threshold = threshold;
+}
+
+void SoundSensor::setThreshold(int threshold) {
+  _threshold = threshold;
+}
+
+int SoundSensor::getThreshold() {
+  return _threshold;
+}
+
+void SoundSensor::calibrate(unsigned long durationMs) {
+  if (!_isAnalog) return;
+
+  unsigned long startTime = millis();
+  long total = 0;
+  int count = 0;
+
+  while (millis() - startTime < durationMs) {
+    total += analogRead(_pin);
+    count++;
+    delay(5);
+  }
+
+  if (count > 0) {
+    _threshold = (total / count) + 50; 
+  }
+}
+
+int SoundSensor::read() {
+  if (_isAnalog) {
+    return analogRead(_pin);
+  } else {
+    return (digitalRead(_pin) == LOW) ? 1 : 0;
+  }
+}
+
+bool SoundSensor::isDetected() {
+  bool active = false;
+  if (_isAnalog) {
+    active = (analogRead(_pin) >= _threshold);
+  } else {
+    active = (digitalRead(_pin) == LOW);
+  }
+
+  if (active) {
+    _lastTriggerTime = millis();
+  }
+
+  return active;
+}
+
+SoundSensor::operator int() {
+  return read();
+}
+
+int SoundSensor::readPeak(unsigned long durationMs) {
+  if (!_isAnalog) return read();
+
+  int maxVal = 0;
+  unsigned long startTime = millis();
+
+  while (millis() - startTime < durationMs) {
+    int val = analogRead(_pin);
+    if (val > maxVal) {
+      maxVal = val;
+    }
+  }
+  return maxVal;
+}
+
+int SoundSensor::readAverage(uint8_t samples) {
+  if (!_isAnalog) return read();
+
+  long sum = 0;
+  for (uint8_t i = 0; i < samples; i++) {
+    sum += analogRead(_pin);
+    delayMicroseconds(100);
+  }
+  return sum / samples;
+}
+
+bool SoundSensor::wasDetectedWithin(unsigned long windowMs) {
+  isDetected();
+  return (millis() - _lastTriggerTime) <= windowMs;
+}
+
+uint8_t SoundSensor::readClaps(unsigned long timeoutMs, unsigned long debounceMs) {
+  uint8_t clapCount = 0;
+  unsigned long startTime = millis();
+  unsigned long lastClap = 0;
+
+  while (millis() - startTime < timeoutMs) {
+    if (isDetected()) {
+      if (millis() - lastClap > debounceMs) {
+        clapCount++;
+        lastClap = millis();
+      }
+    }
+  }
+  return clapCount;
+}

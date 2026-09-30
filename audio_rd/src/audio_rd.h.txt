@@ -1,0 +1,38 @@
+#ifndef AUDIO_RD_H
+#define AUDIO_RD_H
+
+#include <Arduino.h>
+
+class SoundSensor {
+  private:
+    uint8_t _pin;
+    bool _isAnalog;
+    int _threshold;
+    unsigned long _lastTriggerTime;
+
+  public:
+    SoundSensor();
+
+    // 1. Setup & Calibration
+    void attachDigital(uint8_t pin);
+    void attachAnalog(uint8_t pin, int threshold = 500);
+    void setThreshold(int threshold);
+    int getThreshold();
+    void calibrate(unsigned long durationMs = 2000);
+
+    // 2. Direct Reading
+    int read();
+    bool isDetected();
+    operator int(); // Allows: if (aud > 100) or int x = aud;
+
+    // 3. Peak, Average & Clap Analytics
+    int readPeak(unsigned long durationMs = 50);
+    int readAverage(uint8_t samples = 10);
+    bool wasDetectedWithin(unsigned long windowMs);
+    uint8_t readClaps(unsigned long timeoutMs = 800, unsigned long debounceMs = 150);
+};
+
+// Global object instance named 'aud'
+extern SoundSensor aud;
+
+#endif
